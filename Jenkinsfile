@@ -15,7 +15,7 @@ pipeline {
     stages {
         stage('git checkout') {
             steps {
-                git branch: 'master', url: 'https://github.com/rupali-sapkal/Project-2-Ekart-master.git'
+                git branch: 'master', url: 'https://github.com/rupali-sapkal/ekart.git'
             }
         }
 
@@ -69,7 +69,7 @@ pipeline {
         stage('build and Tag docker image') {
             steps {
                 script {
-                        sh "docker build -t youngminds73/ekart:latest -f docker/Dockerfile ."
+                        sh "docker build -t Rupali1624/ekart:latest -f docker/Dockerfile ."
                     }
             }
         }
