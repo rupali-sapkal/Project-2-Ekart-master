@@ -4,6 +4,7 @@ pipeline {
     parameters {
         booleanParam(name: 'RUN_SONAR', defaultValue: false, description: 'Run SonarQube analysis only when SonarCloud/Server settings are configured')
         string(name: 'SONAR_ORG', defaultValue: '', description: 'SonarCloud organization name (required if RUN_SONAR is true)')
+        string(name: 'SONAR_TOKEN_CREDENTIAL_ID', defaultValue: 'sonar-token', description: 'Jenkins credential ID for the SonarCloud token')
     }
 
     environment {
@@ -35,14 +36,19 @@ pipeline {
 
         stage('SonarQube analysis') {
             when {
-                expression { return params.RUN_SONAR && params.SONAR_ORG != '' }
+                expression { return params.RUN_SONAR && params.SONAR_ORG != '' && params.SONAR_TOKEN_CREDENTIAL_ID != '' }
             }
             steps {
-                sh "${env.SCANNER_HOME}/bin/sonar-scanner \
-                    -Dsonar.projectKey=EKART \
-                    -Dsonar.projectName=EKART \
-                    -Dsonar.organization=${params.SONAR_ORG} \
-                    -Dsonar.java.binaries=target/classes"
+                script {
+                    withCredentials([string(credentialsId: params.SONAR_TOKEN_CREDENTIAL_ID, variable: 'SONAR_TOKEN')]) {
+                        sh """${env.SCANNER_HOME}/bin/sonar-scanner \
+                            -Dsonar.projectKey=EKART \
+                            -Dsonar.projectName=EKART \
+                            -Dsonar.organization=${params.SONAR_ORG} \
+                            -Dsonar.login=${SONAR_TOKEN} \
+                            -Dsonar.java.binaries=target/classes"""
+                    }
+                }
             }
         }
 
