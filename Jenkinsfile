@@ -48,7 +48,9 @@ pipeline {
 
         stage('OWASP Dependency Check') {
             steps {
-                dependencyCheck additionalArguments: '--format HTML --format XML', odcInstallation: 'DC', failOnError: false
+                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                    dependencyCheck additionalArguments: '--format HTML --format XML', odcInstallation: 'DC'
+                }
             }
         }
 
