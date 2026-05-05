@@ -5,6 +5,7 @@ pipeline {
     environment {
         SCANNER_HOME = tool 'sonar-scanner'
         NVD_API_KEY = credentials('nvd-api-key')  // Jenkins secret text credential
+        SONAR_TOKEN = credentials('sonar-token')  // Add this line for SonarQube token
     }
 
     tools {
@@ -37,7 +38,8 @@ pipeline {
                     sh "${env.SCANNER_HOME}/bin/sonar-scanner \
                         -Dsonar.projectKey=EKART \
                         -Dsonar.projectName=EKART \
-                        -Dsonar.java.binaries=target/classes"
+                        -Dsonar.java.binaries=target/classes \
+                        -Dsonar.token=$SONAR_TOKEN"
                 }
             }
         }
