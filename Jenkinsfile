@@ -30,12 +30,10 @@ pipeline {
 
         stage('SonarQube analysis') {
             steps {
-                withSonarQubeEnv() {
-                    sh "${env.SCANNER_HOME}/bin/sonar-scanner \
-                        -Dsonar.projectKey=EKART \
-                        -Dsonar.projectName=EKART \
-                        -Dsonar.java.binaries=target/classes"
-                }
+                sh "${env.SCANNER_HOME}/bin/sonar-scanner \
+                    -Dsonar.projectKey=EKART \
+                    -Dsonar.projectName=EKART \
+                    -Dsonar.java.binaries=target/classes"
             }
         }
 
