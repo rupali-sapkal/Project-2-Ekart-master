@@ -3,6 +3,7 @@ pipeline {
 
     parameters {
         booleanParam(name: 'RUN_SONAR', defaultValue: false, description: 'Run SonarQube analysis only when SonarCloud/Server settings are configured')
+        string(name: 'SONAR_ORG', defaultValue: '', description: 'SonarCloud organization name (required if RUN_SONAR is true)')
     }
 
     environment {
@@ -34,12 +35,13 @@ pipeline {
 
         stage('SonarQube analysis') {
             when {
-                expression { return params.RUN_SONAR }
+                expression { return params.RUN_SONAR && params.SONAR_ORG != '' }
             }
             steps {
                 sh "${env.SCANNER_HOME}/bin/sonar-scanner \
                     -Dsonar.projectKey=EKART \
                     -Dsonar.projectName=EKART \
+                    -Dsonar.organization=${params.SONAR_ORG} \
                     -Dsonar.java.binaries=target/classes"
             }
         }
@@ -99,3 +101,4 @@ pipeline {
     }
 
 }
+
