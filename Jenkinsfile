@@ -1,24 +1,21 @@
+
 pipeline {
     agent any
 
-    parameters {
-        booleanParam(name: 'RUN_SONAR', defaultValue: false, description: 'Run SonarQube analysis only when SonarCloud/Server settings are configured')
-        string(name: 'SONAR_ORG', defaultValue: '', description: 'SonarCloud organization name (required if RUN_SONAR is true)')
-        string(name: 'SONAR_TOKEN_CREDENTIAL_ID', defaultValue: 'sonar-token', description: 'Jenkins credential ID for the SonarCloud token')
-    }
-
     environment {
         SCANNER_HOME = tool 'sonar-scanner'
+        NVD_API_KEY = credentials('nvd-api-key')  // Jenkins secret text credential
     }
 
     tools {
-        maven 'Maven'
+        maven 'maven3'
         jdk 'jdk-17'
     }
+
     stages {
         stage('git checkout') {
             steps {
-                git branch: 'main', url: 'https://github.com/rupali-sapkal/Project-2-Ekart-master.git'
+                git branch: 'master', url: 'https://github.com/rupali-sapkal/Project-2-Ekart-master.git'
             }
         }
 
@@ -35,29 +32,23 @@ pipeline {
         }
 
         stage('SonarQube analysis') {
-            when {
-                expression { return params.RUN_SONAR && params.SONAR_ORG != '' && params.SONAR_TOKEN_CREDENTIAL_ID != '' }
-            }
             steps {
-                script {
-                    withCredentials([string(credentialsId: params.SONAR_TOKEN_CREDENTIAL_ID, variable: 'SONAR_TOKEN')]) {
-                        sh """${env.SCANNER_HOME}/bin/sonar-scanner \
-                            -Dsonar.projectKey=EKART \
-                            -Dsonar.projectName=EKART \
-                            -Dsonar.organization=${params.SONAR_ORG} \
-                            -Dsonar.login=${SONAR_TOKEN} \
-                            -Dsonar.java.binaries=target/classes"""
-                    }
+                withSonarQubeEnv('sonar-scanner') {
+                    sh "${env.SCANNER_HOME}/bin/sonar-scanner \
+                        -Dsonar.projectKey=EKART \
+                        -Dsonar.projectName=EKART \
+                        -Dsonar.java.binaries=target/classes"
                 }
             }
         }
 
         stage('OWASP Dependency Check') {
             steps {
-                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                    dependencyCheck additionalArguments: '--format HTML --format XML', odcInstallation: 'DC'
-                }
-            }
+                  withCredentials([string(credentialsId: 'nvd-api-key', variable: 'NVD_API_KEY')]) {
+                    dependencyCheck additionalArguments: "--nvdApiKey=$NVD_API_KEY",
+                                    odcInstallation: 'DC'
+             }
+        }
         }
 
         stage('Build') {
@@ -68,7 +59,7 @@ pipeline {
 
         stage('deploy to Nexus') {
             steps {
-                withMaven(globalMavenSettingsConfig: 'global-maven', jdk: 'jdk-17', maven: 'Maven', mavenSettingsConfig: '', traceability: true) {
+                withMaven(globalMavenSettingsConfig: 'global-maven', jdk: 'jdk-17', maven: 'maven3', mavenSettingsConfig: '', traceability: true) {
                     sh "mvn deploy -DskipTests=true"
                 }
             }
@@ -78,7 +69,7 @@ pipeline {
         stage('build and Tag docker image') {
             steps {
                 script {
-                        sh "docker build -t rupali1624/project-2-ekart:latest -f docker/Dockerfile ."
+                        sh "docker build -t youngminds73/ekart:latest -f docker/Dockerfile ."
                     }
             }
         }
@@ -87,8 +78,8 @@ pipeline {
             steps{
                 script{
                    withCredentials([string(credentialsId: 'dockerhub-pwd', variable: 'dockerhubpwd')]) {
-                   sh 'docker login -u rupali1624 -p ${dockerhubpwd}'}
-                   sh 'docker push rupali1624/project-2-ekart:latest'
+                   sh 'docker login -u Rupali1624 -p ${dockerhubpwd}'}
+                   sh 'docker push rupali-sapkal/Project-2-Ekart-mater:latest'
                 }
             }
         }
@@ -109,4 +100,3 @@ pipeline {
     }
 
 }
-
