@@ -1,6 +1,10 @@
 pipeline {
     agent any
 
+    parameters {
+        booleanParam(name: 'RUN_SONAR', defaultValue: false, description: 'Run SonarQube analysis only when SonarCloud/Server settings are configured')
+    }
+
     environment {
         SCANNER_HOME = tool 'sonar-scanner'
     }
@@ -29,6 +33,9 @@ pipeline {
         }
 
         stage('SonarQube analysis') {
+            when {
+                expression { return params.RUN_SONAR }
+            }
             steps {
                 sh "${env.SCANNER_HOME}/bin/sonar-scanner \
                     -Dsonar.projectKey=EKART \
